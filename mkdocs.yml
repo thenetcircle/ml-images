@@ -1,0 +1,8 @@
+site_name: Activity Streams 2.0
+site_url: https://sovaa.github.io/activitystreams/
+nav:
+    - Home: docs/index.md
+    - Multi-Class Classification: multiclass-classification/README.md
+    - Object Detection: object-detection/README.md
+    - Reverse Image Search: reverse-image-search/README.md
+theme: readthedocs
