@@ -10,7 +10,6 @@ Choose which model version of the Student-Teacher pre-trained weights to use (0-
 
 ```shell
 export ENET_MODEL_VERSION=5
-cd data/
 ```
 
 Download the weights:
@@ -27,5 +26,5 @@ python efficientnet_weight_update_util.py \
   --model b{ENET_MODEL_VERSION} \
   --notop \
   --ckpt efficientnet-b{ENET_MODEL_VERSION}/model.ckpt \
-  --o noisy-student-efficientnet-b{ENET_MODEL_VERSION}-notop.h5
+  --o data/noisy-student-efficientnet-b{ENET_MODEL_VERSION}-notop.h5
 ```
