@@ -192,7 +192,6 @@ def create_model():
     model_final = tf.keras.Model(inputs, outputs, name="EfficientNet")
     model_final.compile(
         optimizer=optimizers.Adam(learning_rate=1e-2),
-
         loss="categorical_crossentropy",
         metrics=[metrics.mae, metrics.categorical_accuracy]
     )
@@ -237,35 +236,35 @@ def unfreeze_model(m, n_layers=20):
     )
 
 
-# for potential multi-server training
-with strategy.scope():
-    model = create_model()
+if __name__ == "__main__":
+    # for potential multi-server training
+    with strategy.scope():
+        model = create_model()
 
+    ds_train = create_dataset(train_dir)
+    ds_test = create_dataset(valid_dir)
 
-ds_train = create_dataset(train_dir)
-ds_test = create_dataset(valid_dir)
+    hist_initial = model.fit(
+        ds_train,
+        epochs=EPOCHS_INITIAL,
+        validation_data=ds_test,
+        verbose=2,
+        callbacks=[reduce_lr, early]
+    )
 
-hist_initial = model.fit(
-    ds_train,
-    epochs=EPOCHS_INITIAL,
-    validation_data=ds_test,
-    verbose=2,
-    callbacks=[reduce_lr, early]
-)
+    model.save_weights(f"{output_dir}/model_efficientnet_b{ENET_MODEL_VERSION}_init_{now}.h5")
+    plot_hist("initial", hist_initial)
 
-model.save_weights(f"{output_dir}/model_efficientnet_b{ENET_MODEL_VERSION}_init_2.5m_{now}.h5")
-plot_hist("initial", hist_initial)
+    # train a few more layers
+    unfreeze_model(model, n_layers=N_LAYERS_UNFREEZE)
 
-# train a few more layers
-unfreeze_model(model, n_layers=N_LAYERS_UNFREEZE)
+    hist_transfer = model.fit(
+        ds_train,
+        epochs=EPOCHS_TRANSFER,
+        validation_data=ds_test,
+        verbose=2,
+        callbacks=[logging, checkpoint, reduce_lr, early]
+    )
 
-hist_transfer = model.fit(
-    ds_train,
-    epochs=EPOCHS_TRANSFER,
-    validation_data=ds_test,
-    verbose=2,
-    callbacks=[logging, checkpoint, reduce_lr, early]
-)
-
-model.save_weights(f"{output_dir}/model_efficientnet_b{ENET_MODEL_VERSION}_tl_2.5m_{now}.h5")
-plot_hist("transfer", hist_initial)
+    model.save_weights(f"{output_dir}/model_efficientnet_b{ENET_MODEL_VERSION}_tl_{now}.h5")
+    plot_hist("transfer", hist_initial)
