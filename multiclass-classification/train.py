@@ -8,6 +8,7 @@ warnings.filterwarnings('ignore')
 import arrow
 import os
 import sys
+from loguru import logger
 from tensorflow.keras.applications.efficientnet import *
 from tensorflow.keras.layers.experimental import preprocessing
 from tensorflow.keras.models import Sequential
@@ -81,6 +82,7 @@ N_LAYERS_UNFREEZE = 20
 BATCH_SIZE = 16
 EPOCHS_INITIAL = 25
 EPOCHS_TRANSFER = 10
+KERAS_F_STR = "{epoch:02d}_{val_loss:.2f}"
 
 # choose keras class based on model version
 EfficientNetBx = ENET_MODEL_CLASSES[ENET_MODEL_VERSION]
@@ -251,8 +253,9 @@ if __name__ == "__main__":
         verbose=2,
         callbacks=[reduce_lr, early]
     )
+    logger.info(f"possible hist_initial keys: {hist_initial.history.keys()}")
 
-    model.save_weights(f"{output_dir}/model_efficientnet_b{ENET_MODEL_VERSION}_init_{now}.h5")
+    model.save_weights(f"{output_dir}/model_efficientnet_b{ENET_MODEL_VERSION}_init_{KERAS_F_STR}_{now}.h5")
     plot_hist("initial", hist_initial)
 
     # train a few more layers
@@ -265,6 +268,7 @@ if __name__ == "__main__":
         verbose=2,
         callbacks=[logging, checkpoint, reduce_lr, early]
     )
+    logger.info(f"possible hist_transfer keys: {hist_initial.history.keys()}")
 
     model.save_weights(f"{output_dir}/model_efficientnet_b{ENET_MODEL_VERSION}_tl_{now}.h5")
     plot_hist("transfer", hist_initial)
