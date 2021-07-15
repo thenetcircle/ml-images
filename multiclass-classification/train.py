@@ -80,8 +80,8 @@ IMG_SIZE = ENET_IMG_SIZES[ENET_MODEL_VERSION]
 NUM_CLASSES = 3
 N_LAYERS_UNFREEZE = 20
 BATCH_SIZE = 256
-EPOCHS_INITIAL = 5
-EPOCHS_TRANSFER = 5
+EPOCHS_INITIAL = 20
+EPOCHS_TRANSFER = 20
 KERAS_F_STR = "{epoch:02d}_{val_categorical_accuracy:.5f}"
 
 # choose keras class based on model version
