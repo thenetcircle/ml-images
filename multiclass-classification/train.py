@@ -164,7 +164,7 @@ def create_dataset(directory):
         shuffle=True,
         interpolation="bilinear",
         follow_links=False,
-        crop_to_aspect_ratio=False
+        smart_resize=False
     )
 
 
