@@ -80,9 +80,9 @@ IMG_SIZE = ENET_IMG_SIZES[ENET_MODEL_VERSION]
 NUM_CLASSES = 3
 N_LAYERS_UNFREEZE = 20
 BATCH_SIZE = 16
-EPOCHS_INITIAL = 25
-EPOCHS_TRANSFER = 10
-KERAS_F_STR = "{epoch:02d}_{val_loss:.2f}"
+EPOCHS_INITIAL = 5
+EPOCHS_TRANSFER = 5
+KERAS_F_STR = "{epoch:02d}_{val_categorical_accuracy:.2f}"
 
 # choose keras class based on model version
 EfficientNetBx = ENET_MODEL_CLASSES[ENET_MODEL_VERSION]
@@ -207,8 +207,8 @@ def input_preprocess(image, label):
 
 
 def plot_hist(prefix, hist):
-    plt.plot(hist.history["accuracy"])
-    plt.plot(hist.history["val_accuracy"])
+    plt.plot(hist.history["categorical_accuracy"])
+    plt.plot(hist.history["val_categorical_accuracy"])
     plt.title(f"{prefix} model accuracy")
     plt.ylabel("accuracy")
     plt.xlabel("epoch")
@@ -250,7 +250,7 @@ if __name__ == "__main__":
         ds_train,
         epochs=EPOCHS_INITIAL,
         validation_data=ds_test,
-        verbose=2,
+        verbose=1,
         callbacks=[reduce_lr, early]
     )
     logger.info(f"possible hist_initial keys: {hist_initial.history.keys()}")
