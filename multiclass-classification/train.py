@@ -207,6 +207,9 @@ def input_preprocess(image, label):
 
 
 def plot_hist(prefix, hist):
+    # clear previous plot
+    plt.figure()
+
     plt.plot(hist.history["categorical_accuracy"])
     plt.plot(hist.history["val_categorical_accuracy"])
     plt.title(f"{prefix} model accuracy")
