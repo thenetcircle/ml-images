@@ -79,7 +79,7 @@ ENET_MODEL_VERSION = 5
 IMG_SIZE = ENET_IMG_SIZES[ENET_MODEL_VERSION]
 NUM_CLASSES = 3
 N_LAYERS_UNFREEZE = 20
-BATCH_SIZE = 16
+BATCH_SIZE = 64
 EPOCHS_INITIAL = 5
 EPOCHS_TRANSFER = 5
 KERAS_F_STR = "{epoch:02d}_{val_categorical_accuracy:.2f}"
@@ -90,7 +90,7 @@ EfficientNetBx = ENET_MODEL_CLASSES[ENET_MODEL_VERSION]
 input_dir = sys.argv[1]
 output_dir = sys.argv[2]
 log_dir = f"{output_dir}/logs/{now}/"
-checkpoint_path = f"{output_dir}/model_ckpt_efficientnet_b{ENET_MODEL_VERSION}_2.5m_{now}.h5"
+checkpoint_path = f"{output_dir}/model_ckpt_efficientnet_b{ENET_MODEL_VERSION}_{KERAS_F_STR}_{now}.h5"
 train_dir = f"{input_dir}/train"
 valid_dir = f"{input_dir}/valid"
 
@@ -255,7 +255,7 @@ if __name__ == "__main__":
     )
     logger.info(f"possible hist_initial keys: {hist_initial.history.keys()}")
 
-    model.save_weights(f"{output_dir}/model_efficientnet_b{ENET_MODEL_VERSION}_init_{KERAS_F_STR}_{now}.h5")
+    model.save_weights(f"{output_dir}/model_efficientnet_b{ENET_MODEL_VERSION}_init_{now}.h5")
     plot_hist("initial", hist_initial)
 
     # train a few more layers
@@ -265,7 +265,7 @@ if __name__ == "__main__":
         ds_train,
         epochs=EPOCHS_TRANSFER,
         validation_data=ds_test,
-        verbose=2,
+        verbose=1,
         callbacks=[logging, checkpoint, reduce_lr, early]
     )
     logger.info(f"possible hist_transfer keys: {hist_initial.history.keys()}")
