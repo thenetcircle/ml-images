@@ -75,13 +75,14 @@ plt.ioff()
 now = arrow.utcnow().format('YYMMDD_HHmm')
 
 # chooses the model size; larger is better, but requires a lot more memory and compute
-ENET_MODEL_VERSION = 5
-IMG_SIZE = ENET_IMG_SIZES[ENET_MODEL_VERSION]
+ENET_MODEL_VERSION = 7
 NUM_CLASSES = 3
 N_LAYERS_UNFREEZE = 20
 BATCH_SIZE = 256
 EPOCHS_INITIAL = 20
 EPOCHS_TRANSFER = 20
+
+IMG_SIZE = ENET_IMG_SIZES[ENET_MODEL_VERSION]
 KERAS_F_STR = "{epoch:02d}_{val_categorical_accuracy:.5f}"
 
 # choose keras class based on model version
