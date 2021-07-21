@@ -180,7 +180,7 @@ def create_model():
         weights=f"data/noisy-student-efficientnet-b{ENET_MODEL_VERSION}-notop.h5"
     )
 
-    # freeze the conv layers first so we can train out new top model first
+    # freeze the conv layers first so we can train our new top model first
     headless_model.trainable = False
 
     # rebuild top
@@ -231,8 +231,7 @@ def unfreeze_model(m, n_layers=20):
 
     # unfreeze the top n_layers layers while leaving BatchNorm layers frozen
     for layer in m.layers[-n_layers:]:
-        if not isinstance(layer, BatchNormalization):
-            layer.trainable = True
+        layer.trainable = not isinstance(layer, BatchNormalization)
 
     # have to re-compile after changing layers; also, use a smaller learning rate to not mess up the weights
     m.compile(
