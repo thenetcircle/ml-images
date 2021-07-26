@@ -41,7 +41,7 @@ def check_dir(directory, should_raise: bool = False):
 
 # suppress image loading warnings, messes up the output
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
-tf.logging.set_verbosity(tf.logging.ERROR)
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 # resolutions for EfficientNet; larger images requires more gpu memory / smaller batch size
 ENET_IMG_SIZES = {
