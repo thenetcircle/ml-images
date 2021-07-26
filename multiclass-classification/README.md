@@ -3,7 +3,7 @@
 Choose which model version of the Student-Teacher pre-trained weights to use (0-7):
 
 ```shell
-export ENET_MODEL_VERSION=7
+export ENET_MODEL_VERSION=6
 ```
 
 Download the weights:
