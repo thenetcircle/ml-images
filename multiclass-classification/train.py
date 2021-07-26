@@ -32,19 +32,16 @@ import matplotlib.pyplot as plt
 # from tensorflow.keras import mixed_precision
 # mixed_precision.set_global_policy('mixed_float16')
 
-# TODO: combine subset dirs with regular dirs to get more data
-# subset_train_dir = "/usr/local/data/imgs/subset_train"
-# subset_valid_dir = "/usr/local/data/imgs/subset_valid"
-# train_dir = "/usr/local/data/imgs/train"
-# valid_dir = "/usr/local/data/imgs/valid"
-
-
 def check_dir(directory, should_raise: bool = False):
     if not os.path.exists(directory):
         if should_raise:
             raise RuntimeError(f"specified dir '{directory}' does not exist")
         os.mkdir(directory)
 
+
+# suppress image loading warnings, messes up the output
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+tf.logging.set_verbosity(tf.logging.ERROR)
 
 # resolutions for EfficientNet; larger images requires more gpu memory / smaller batch size
 ENET_IMG_SIZES = {
@@ -78,9 +75,9 @@ now = arrow.utcnow().format('YYMMDD_HHmm')
 ENET_MODEL_VERSION = 7
 NUM_CLASSES = 3
 N_LAYERS_UNFREEZE = 20
-BATCH_SIZE = 256
-EPOCHS_INITIAL = 20
-EPOCHS_TRANSFER = 20
+BATCH_SIZE = 128
+EPOCHS_INITIAL = 5
+EPOCHS_TRANSFER = 15
 
 IMG_SIZE = ENET_IMG_SIZES[ENET_MODEL_VERSION]
 KERAS_F_STR = "{epoch:02d}_{val_categorical_accuracy:.5f}"
