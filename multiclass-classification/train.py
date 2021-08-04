@@ -8,6 +8,8 @@ warnings.filterwarnings('ignore')
 import arrow
 import os
 import sys
+import json
+
 from loguru import logger
 from tensorflow.keras.applications.efficientnet import *
 from tensorflow.keras.layers.experimental import preprocessing
@@ -74,10 +76,10 @@ now = arrow.utcnow().format('YYMMDD_HHmm')
 # chooses the model size; larger is better, but requires a lot more memory and compute
 ENET_MODEL_VERSION = 6
 NUM_CLASSES = 3
-N_LAYERS_UNFREEZE = 20
-BATCH_SIZE = 128
+N_LAYERS_UNFREEZE = 0
+BATCH_SIZE = 64
 EPOCHS_INITIAL = 5
-EPOCHS_TRANSFER = 20
+EPOCHS_TRANSFER = 50
 
 IMG_SIZE = ENET_IMG_SIZES[ENET_MODEL_VERSION]
 KERAS_F_STR = "{epoch:02d}_{val_categorical_accuracy:.5f}"
@@ -96,15 +98,22 @@ check_dir(input_dir, should_raise=True)
 check_dir(output_dir)
 check_dir(log_dir)
 
-# TODO: setup multi-worker training
 """
-os.environ["TF_CONFIG"] = json.dumps({
+# TF_CONFIG example:
+{
     "cluster": {
         "worker": ["host1:port", "host2:port", "host3:port"],
         "ps": ["host4:port", "host5:port"]
     },
-   "task": {"type": "worker", "index": 1}
-})
+    "task": {
+        "type": "worker",
+        "index": 1
+    }
+}
+"""
+
+with open(os.environ["TF_CONFIG_FILE"], 'r') as f:
+    os.environ["TF_CONFIG"] = json.dumps(json.load(f))
 
 # distribute training on multiple machines, need to set TF_CONFIG on all hosts
 strategy = tf.distribute.MultiWorkerMirroredStrategy(
@@ -112,9 +121,8 @@ strategy = tf.distribute.MultiWorkerMirroredStrategy(
         implementation=tf.distribute.experimental.CommunicationImplementation.AUTO
     )
 )
-"""
 
-strategy = tf.distribute.MirroredStrategy()
+# strategy = tf.distribute.MirroredStrategy()
 
 img_augmentation = Sequential(
     [
@@ -259,7 +267,8 @@ if __name__ == "__main__":
     plot_hist("initial", hist_initial)
 
     # train a few more layers
-    unfreeze_model(model, n_layers=N_LAYERS_UNFREEZE)
+    with strategy.scope():
+        unfreeze_model(model, n_layers=N_LAYERS_UNFREEZE)
 
     hist_transfer = model.fit(
         ds_train,
