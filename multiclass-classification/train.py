@@ -77,7 +77,7 @@ now = arrow.utcnow().format('YYMMDD_HHmm')
 ENET_MODEL_VERSION = 6
 NUM_CLASSES = 3
 N_LAYERS_UNFREEZE = 0
-BATCH_SIZE = 64
+BATCH_SIZE = 16
 EPOCHS_INITIAL = 5
 EPOCHS_TRANSFER = 50
 
@@ -102,12 +102,11 @@ check_dir(log_dir)
 # TF_CONFIG example:
 {
     "cluster": {
-        "worker": ["host1:port", "host2:port", "host3:port"],
-        "ps": ["host4:port", "host5:port"]
+        "worker": ["host1:port", "host2:port", "host3:port"]
     },
     "task": {
         "type": "worker",
-        "index": 1
+        "index": 0
     }
 }
 """
