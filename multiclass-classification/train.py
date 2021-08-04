@@ -90,7 +90,7 @@ EfficientNetBx = ENET_MODEL_CLASSES[ENET_MODEL_VERSION]
 input_dir = sys.argv[1]
 output_dir = sys.argv[2]
 log_dir = f"{output_dir}/logs/{now}/"
-checkpoint_path = f"{output_dir}/model_ckpt_efficientnet_b{ENET_MODEL_VERSION}_{KERAS_F_STR}_{now}.h5"
+checkpoint_path = f"{output_dir}/model_ckpt_efficientnet_b{ENET_MODEL_VERSION}_{now}_{KERAS_F_STR}.h5"
 train_dir = f"{input_dir}/train"
 valid_dir = f"{input_dir}/valid"
 
