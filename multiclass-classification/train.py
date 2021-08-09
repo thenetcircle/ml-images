@@ -12,6 +12,7 @@ from loguru import logger
 from tensorflow.keras.applications.efficientnet import *
 from tensorflow.keras.layers.experimental import preprocessing
 from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Activation
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.layers import Dropout
@@ -19,10 +20,12 @@ from tensorflow.keras.layers import GlobalAveragePooling2D
 from tensorflow.keras.layers import Input
 from tensorflow.keras import optimizers
 from tensorflow.keras import metrics
+from tensorflow.keras.backend import sigmoid
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.callbacks import ReduceLROnPlateau
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.callbacks import TensorBoard
+from tensorflow.keras.utils.generic_utils import get_custom_objects
 import tensorflow as tf
 import matplotlib.pyplot as plt
 
@@ -76,8 +79,8 @@ ENET_MODEL_VERSION = 6
 NUM_CLASSES = 3
 N_LAYERS_UNFREEZE = 20
 BATCH_SIZE = 128
-EPOCHS_INITIAL = 5
-EPOCHS_TRANSFER = 20
+EPOCHS_INITIAL = 8
+EPOCHS_TRANSFER = 50
 
 IMG_SIZE = ENET_IMG_SIZES[ENET_MODEL_VERSION]
 KERAS_F_STR = "{epoch:02d}_{val_categorical_accuracy:.5f}"
@@ -166,6 +169,20 @@ def create_dataset(directory):
     )
 
 
+class SwishActivation(Activation):
+    def __init__(self, activation, **kwargs):
+        super().__init__(activation, **kwargs)
+        self.__name__ = 'swish_act'
+
+
+# https://towardsdatascience.com/comparison-of-activation-functions-for-deep-neural-networks-706ac4284c8a
+def swish_act(x, beta=1):
+    return x * sigmoid(beta * x)
+
+
+get_custom_objects().update({'swish_act': SwishActivation(swish_act)})
+
+
 def create_model():
     inputs = Input(shape=(IMG_SIZE, IMG_SIZE, 3))
     input_tensor = img_augmentation(inputs)
@@ -181,11 +198,20 @@ def create_model():
     headless_model.trainable = False
 
     # rebuild top
-    x = GlobalAveragePooling2D(name="avg_pool")(headless_model.output)
+    x = headless_model.output
+    # x = GlobalAveragePooling2D(name="avg_pool")(x)
     x = BatchNormalization()(x)
+    x = Dropout(0.5)(x)
 
-    top_dropout_rate = 0.2
-    x = Dropout(top_dropout_rate, name="top_dropout")(x)
+    x = Dense(512)(x)
+    x = BatchNormalization()(x)
+    x = Activation(swish_act)(x)
+    x = Dropout(0.2)(x)
+
+    x = Dense(128)(x)
+    x = BatchNormalization()(x)
+    x = Activation(swish_act)(x)
+
     outputs = Dense(NUM_CLASSES, activation="softmax", name="pred")(x)
 
     # compile the model
