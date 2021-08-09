@@ -8,6 +8,8 @@ warnings.filterwarnings('ignore')
 import arrow
 import os
 import sys
+import json
+
 from loguru import logger
 from tensorflow.keras.applications.efficientnet import *
 from tensorflow.keras.layers.experimental import preprocessing
@@ -91,7 +93,7 @@ EfficientNetBx = ENET_MODEL_CLASSES[ENET_MODEL_VERSION]
 input_dir = sys.argv[1]
 output_dir = sys.argv[2]
 log_dir = f"{output_dir}/logs/{now}/"
-checkpoint_path = f"{output_dir}/model_ckpt_efficientnet_b{ENET_MODEL_VERSION}_{KERAS_F_STR}_{now}.h5"
+checkpoint_path = f"{output_dir}/model_ckpt_efficientnet_b{ENET_MODEL_VERSION}_{now}_{KERAS_F_STR}.h5"
 train_dir = f"{input_dir}/train"
 valid_dir = f"{input_dir}/valid"
 
@@ -99,15 +101,21 @@ check_dir(input_dir, should_raise=True)
 check_dir(output_dir)
 check_dir(log_dir)
 
-# TODO: setup multi-worker training
 """
-os.environ["TF_CONFIG"] = json.dumps({
+# TF_CONFIG example:
+{
     "cluster": {
-        "worker": ["host1:port", "host2:port", "host3:port"],
-        "ps": ["host4:port", "host5:port"]
+        "worker": ["host1:port", "host2:port", "host3:port"]
     },
-   "task": {"type": "worker", "index": 1}
-})
+    "task": {
+        "type": "worker",
+        "index": 0
+    }
+}
+"""
+
+with open(os.environ["TF_CONFIG_FILE"], 'r') as f:
+    os.environ["TF_CONFIG"] = json.dumps(json.load(f))
 
 # distribute training on multiple machines, need to set TF_CONFIG on all hosts
 strategy = tf.distribute.MultiWorkerMirroredStrategy(
@@ -115,9 +123,8 @@ strategy = tf.distribute.MultiWorkerMirroredStrategy(
         implementation=tf.distribute.experimental.CommunicationImplementation.AUTO
     )
 )
-"""
 
-strategy = tf.distribute.MirroredStrategy()
+# strategy = tf.distribute.MirroredStrategy()
 
 img_augmentation = Sequential(
     [
@@ -285,7 +292,8 @@ if __name__ == "__main__":
     plot_hist("initial", hist_initial)
 
     # train a few more layers
-    unfreeze_model(model, n_layers=N_LAYERS_UNFREEZE)
+    with strategy.scope():
+        unfreeze_model(model, n_layers=N_LAYERS_UNFREEZE)
 
     hist_transfer = model.fit(
         ds_train,
