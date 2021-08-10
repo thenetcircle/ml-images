@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if (( $# -lt 2 )); then
+if [ $# -lt 3 ]; then
   echo 'usage: ./train.sh train_dir output_dir'
   exit 1
 fi
