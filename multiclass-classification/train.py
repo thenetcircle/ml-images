@@ -95,6 +95,9 @@ def swish_act(x, beta=1):
     return x * sigmoid(beta * x)
 
 
+# either distributed or single-node; need to create this at program startup
+strategy = create_strategy()
+
 # register our custom activation
 get_custom_objects().update({'swish_act': SwishActivation(swish_act)})
 
@@ -286,9 +289,6 @@ def unfreeze_model(m, n_layers=20):
 
 
 if __name__ == "__main__":
-    # either distributed or single-node
-    strategy = create_strategy()
-
     # for potential multi-server training
     with strategy.scope():
         model = create_model()
