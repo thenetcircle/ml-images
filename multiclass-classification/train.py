@@ -1,5 +1,4 @@
 from PIL import ImageFile
-
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 import warnings
@@ -22,20 +21,16 @@ from tensorflow.keras.layers import GlobalAveragePooling2D
 from tensorflow.keras.layers import Input
 from tensorflow.keras import optimizers
 from tensorflow.keras import metrics
+from tensorflow.keras import mixed_precision
 from tensorflow.keras.backend import sigmoid
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.callbacks import ReduceLROnPlateau
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.callbacks import TensorBoard
-from tensorflow.keras.utils.generic_utils import get_custom_objects
+from tensorflow.keras.utils import get_custom_objects
 import tensorflow as tf
 import matplotlib.pyplot as plt
 
-
-# TODO: try using half-precision; requires half the memory and runs twice as fast
-# probably not possible with pre-trained weights, would need to train from scratch, and efficientnet takes ages to train
-# from tensorflow.keras import mixed_precision
-# mixed_precision.set_global_policy('mixed_float16')
 
 def check_dir(directory, should_raise: bool = False):
     if not os.path.exists(directory):
@@ -43,6 +38,69 @@ def check_dir(directory, should_raise: bool = False):
             raise RuntimeError(f"specified dir '{directory}' does not exist")
         os.mkdir(directory)
 
+
+def create_strategy():
+    """
+    TF_CONFIG example:
+    {
+        "cluster": {
+            "worker": ["host1:port", "host2:port", "host3:port"]
+        },
+        "task": {
+            "type": "worker",
+            "index": 0
+        }
+    }
+    """
+    if "TF_CONFIG_FILE" in os.environ:
+        logger.info("using distributed training...")
+
+        with open(os.environ["TF_CONFIG_FILE"], 'r') as f:
+            os.environ["TF_CONFIG"] = json.dumps(json.load(f))
+
+        # distribute training on multiple machines, need to set TF_CONFIG on all hosts
+        return tf.distribute.MultiWorkerMirroredStrategy(
+            communication_options=tf.distribute.experimental.CommunicationOptions(
+                implementation=tf.distribute.experimental.CommunicationImplementation.AUTO
+            )
+        )
+
+    logger.info("using single node training...")
+    return tf.distribute.MirroredStrategy()
+
+
+def create_dataset(directory):
+    return tf.keras.preprocessing.image_dataset_from_directory(
+        directory,
+        labels="inferred",
+        label_mode="categorical",
+        color_mode="rgb",
+        batch_size=BATCH_SIZE,
+        image_size=(IMG_SIZE, IMG_SIZE),
+        shuffle=True,
+        interpolation="bilinear",
+        follow_links=False,
+        smart_resize=False
+    )
+
+
+class SwishActivation(Activation):
+    def __init__(self, activation, **kwargs):
+        super().__init__(activation, **kwargs)
+        self.__name__ = 'swish_act'
+
+
+# https://towardsdatascience.com/comparison-of-activation-functions-for-deep-neural-networks-706ac4284c8a
+def swish_act(x, beta=1):
+    return x * sigmoid(beta * x)
+
+
+# register our custom activation
+get_custom_objects().update({'swish_act': SwishActivation(swish_act)})
+
+# use both float32 and float16; float16 will be faster on the gpu, but some layers needs the
+# numerical stability provided by float32
+mixed_precision.set_global_policy('mixed_float16')
 
 # suppress image loading warnings, messes up the output
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
@@ -101,30 +159,6 @@ check_dir(input_dir, should_raise=True)
 check_dir(output_dir)
 check_dir(log_dir)
 
-"""
-# TF_CONFIG example:
-{
-    "cluster": {
-        "worker": ["host1:port", "host2:port", "host3:port"]
-    },
-    "task": {
-        "type": "worker",
-        "index": 0
-    }
-}
-"""
-
-with open(os.environ["TF_CONFIG_FILE"], 'r') as f:
-    os.environ["TF_CONFIG"] = json.dumps(json.load(f))
-
-# distribute training on multiple machines, need to set TF_CONFIG on all hosts
-strategy = tf.distribute.MultiWorkerMirroredStrategy(
-    communication_options=tf.distribute.experimental.CommunicationOptions(
-        implementation=tf.distribute.experimental.CommunicationImplementation.AUTO
-    )
-)
-
-# strategy = tf.distribute.MirroredStrategy()
 
 img_augmentation = Sequential(
     [
@@ -161,35 +195,6 @@ logging = TensorBoard(
 )
 
 
-def create_dataset(directory):
-    return tf.keras.preprocessing.image_dataset_from_directory(
-        directory,
-        labels="inferred",
-        label_mode="categorical",
-        color_mode="rgb",
-        batch_size=BATCH_SIZE,
-        image_size=(IMG_SIZE, IMG_SIZE),
-        shuffle=True,
-        interpolation="bilinear",
-        follow_links=False,
-        smart_resize=False
-    )
-
-
-class SwishActivation(Activation):
-    def __init__(self, activation, **kwargs):
-        super().__init__(activation, **kwargs)
-        self.__name__ = 'swish_act'
-
-
-# https://towardsdatascience.com/comparison-of-activation-functions-for-deep-neural-networks-706ac4284c8a
-def swish_act(x, beta=1):
-    return x * sigmoid(beta * x)
-
-
-get_custom_objects().update({'swish_act': SwishActivation(swish_act)})
-
-
 def create_model():
     inputs = Input(shape=(IMG_SIZE, IMG_SIZE, 3))
     input_tensor = img_augmentation(inputs)
@@ -219,7 +224,16 @@ def create_model():
     x = BatchNormalization()(x)
     x = Activation(swish_act)(x)
 
-    outputs = Dense(NUM_CLASSES, activation="softmax", name="pred")(x)
+    # when using mixed precision, we need to separate the output layer and the activation, since
+    # softmax on fp16 is not numerically stable, while Dense fp16 IS:
+    #
+    #   Adding a float16 softmax in the middle of a model is fine, but a softmax at the end of the
+    #   model should be in float32. The reason is that if the intermediate tensor flowing from the
+    #   softmax to the loss is float16 or bfloat16, numeric issues may occur.
+    #
+    # more info: https://www.tensorflow.org/guide/mixed_precision
+    x = Dense(NUM_CLASSES, name="dense_logits")(x)
+    outputs = Activation('softmax', dtype='float32', name='predictions')(x)
 
     # compile the model
     model_final = tf.keras.Model(inputs, outputs, name="EfficientNet")
@@ -272,6 +286,9 @@ def unfreeze_model(m, n_layers=20):
 
 
 if __name__ == "__main__":
+    # either distributed or single-node
+    strategy = create_strategy()
+
     # for potential multi-server training
     with strategy.scope():
         model = create_model()
