@@ -236,8 +236,11 @@ def create_model():
     #   softmax to the loss is float16 or bfloat16, numeric issues may occur.
     #
     # more info: https://www.tensorflow.org/guide/mixed_precision
-    x = Dense(NUM_CLASSES, name="dense_logits")(x)
-    outputs = Activation('softmax', dtype='float32', name='predictions')(x)
+    # TODO: issues with fp16 on efficientnet and tf 2.5
+    # x = Dense(NUM_CLASSES, name="dense_logits")(x)
+    # outputs = Activation('softmax', dtype='float32', name='predictions')(x)
+    
+    outputs = Dense(NUM_CLASSES, activation="softmax", name="pred")(x)
 
     # compile the model
     model_final = tf.keras.Model(inputs, outputs, name="EfficientNet")
