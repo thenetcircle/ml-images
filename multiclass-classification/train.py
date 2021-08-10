@@ -215,7 +215,7 @@ def create_model():
 
     # rebuild top
     x = headless_model.output
-    # x = GlobalAveragePooling2D(name="avg_pool")(x)
+    x = GlobalAveragePooling2D(name="avg_pool")(x)
     x = BatchNormalization()(x)
     x = Dropout(0.5)(x)
 
@@ -239,7 +239,7 @@ def create_model():
     # TODO: issues with fp16 on efficientnet and tf 2.5
     # x = Dense(NUM_CLASSES, name="dense_logits")(x)
     # outputs = Activation('softmax', dtype='float32', name='predictions')(x)
-    
+
     outputs = Dense(NUM_CLASSES, activation="softmax", name="pred")(x)
 
     # compile the model
