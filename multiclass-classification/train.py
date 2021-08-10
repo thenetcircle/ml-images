@@ -142,7 +142,8 @@ now = arrow.utcnow().format('YYMMDD_HHmm')
 ENET_MODEL_VERSION = 3
 NUM_CLASSES = 3
 N_LAYERS_UNFREEZE = 20
-BATCH_SIZE = 256
+BATCH_SIZE = 1024
+LEARNING_RATE = BATCH_SIZE / 16_000
 EPOCHS_INITIAL = 8
 EPOCHS_TRANSFER = 50
 
@@ -245,7 +246,7 @@ def create_model():
     # compile the model
     model_final = tf.keras.Model(inputs, outputs, name="EfficientNet")
     model_final.compile(
-        optimizer=optimizers.Adam(learning_rate=1e-2),
+        optimizer=optimizers.Adam(learning_rate=LEARNING_RATE),
         loss="categorical_crossentropy",
         metrics=[metrics.mae, metrics.categorical_accuracy]
     )
@@ -286,7 +287,7 @@ def unfreeze_model(m, n_layers=20):
 
     # have to re-compile after changing layers; also, use a smaller learning rate to not mess up the weights
     m.compile(
-        optimizer=optimizers.Adam(learning_rate=1e-4),
+        optimizer=optimizers.Adam(learning_rate=LEARNING_RATE),
         loss="categorical_crossentropy",
         metrics=[metrics.mae, metrics.categorical_accuracy]
     )
