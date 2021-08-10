@@ -101,9 +101,10 @@ strategy = create_strategy()
 # register our custom activation
 get_custom_objects().update({'swish_act': SwishActivation(swish_act)})
 
+# TODO: issues with mixed precision on tf 2.5 and efficientnet
 # use both float32 and float16; float16 will be faster on the gpu, but some layers needs the
 # numerical stability provided by float32
-mixed_precision.set_global_policy('mixed_float16')
+# mixed_precision.set_global_policy('mixed_float16')
 
 # suppress image loading warnings, messes up the output
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
@@ -138,10 +139,10 @@ plt.ioff()
 now = arrow.utcnow().format('YYMMDD_HHmm')
 
 # chooses the model size; larger is better, but requires a lot more memory and compute
-ENET_MODEL_VERSION = 6
+ENET_MODEL_VERSION = 3
 NUM_CLASSES = 3
 N_LAYERS_UNFREEZE = 20
-BATCH_SIZE = 128
+BATCH_SIZE = 256
 EPOCHS_INITIAL = 8
 EPOCHS_TRANSFER = 50
 
