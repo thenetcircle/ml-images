@@ -141,8 +141,8 @@ now = arrow.utcnow().format('YYMMDD_HHmm')
 # chooses the model size; larger is better, but requires a lot more memory and compute
 ENET_MODEL_VERSION = 3
 NUM_CLASSES = 3
-N_LAYERS_UNFREEZE = 20
-BATCH_SIZE = 1024
+N_LAYERS_UNFREEZE = 400
+BATCH_SIZE = 64
 LEARNING_RATE = BATCH_SIZE / 16_000
 EPOCHS_INITIAL = 8
 EPOCHS_TRANSFER = 50
