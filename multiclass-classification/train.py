@@ -142,8 +142,8 @@ now = arrow.utcnow().format('YYMMDD_HHmm')
 ENET_MODEL_VERSION = 3
 NUM_CLASSES = 3
 N_LAYERS_UNFREEZE = 400
-BATCH_SIZE = 64
-LEARNING_RATE = BATCH_SIZE / 16_000
+BATCH_SIZE = 128
+LEARNING_RATE = BATCH_SIZE / 16_000 / 10  # using LR as in the paper cause loss to go to infinity, div by 10
 EPOCHS_INITIAL = 8
 EPOCHS_TRANSFER = 50
 
