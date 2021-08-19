@@ -148,7 +148,7 @@ EPOCHS_INITIAL = 8
 EPOCHS_TRANSFER = 50
 
 IMG_SIZE = ENET_IMG_SIZES[ENET_MODEL_VERSION]
-KERAS_F_STR = "{epoch:02d}_{val_categorical_accuracy:.5f}"
+KERAS_F_STR = "{val_categorical_accuracy:.5f}_{epoch:02d}"
 
 # choose keras class based on model version
 EfficientNetBx = ENET_MODEL_CLASSES[ENET_MODEL_VERSION]
@@ -156,7 +156,7 @@ EfficientNetBx = ENET_MODEL_CLASSES[ENET_MODEL_VERSION]
 input_dir = sys.argv[1]
 output_dir = sys.argv[2]
 log_dir = f"{output_dir}/logs/{now}/"
-checkpoint_path = f"{output_dir}/model_ckpt_efficientnet_b{ENET_MODEL_VERSION}_{now}_{KERAS_F_STR}.h5"
+checkpoint_path = f"{output_dir}/model_ckpt_efficientnet_b{ENET_MODEL_VERSION}_{KERAS_F_STR}_{now}.h5"
 train_dir = f"{input_dir}/train"
 valid_dir = f"{input_dir}/valid"
 
