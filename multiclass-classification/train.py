@@ -99,7 +99,7 @@ def swish_act(x, beta=1):
 strategy = create_strategy()
 
 # register our custom activation
-get_custom_objects().update({'swish_act': SwishActivation(swish_act)})
+# get_custom_objects().update({'swish_act': SwishActivation(swish_act)})
 
 # TODO: issues with mixed precision on tf 2.5 and efficientnet
 # use both float32 and float16; float16 will be faster on the gpu, but some layers needs the
@@ -141,11 +141,11 @@ now = arrow.utcnow().format('YYMMDD_HHmm')
 # chooses the model size; larger is better, but requires a lot more memory and compute
 ENET_MODEL_VERSION = 3
 NUM_CLASSES = 3
-N_LAYERS_UNFREEZE = 400
-BATCH_SIZE = 192
+N_LAYERS_UNFREEZE = 0
+BATCH_SIZE = 64
 LEARNING_RATE = BATCH_SIZE / 16_000 / 100  # using LR as in the paper causes loss to go to infinity; div by 100
-EPOCHS_INITIAL = 8
-EPOCHS_TRANSFER = 50
+EPOCHS_INITIAL = 1
+EPOCHS_TRANSFER = 100
 
 IMG_SIZE = ENET_IMG_SIZES[ENET_MODEL_VERSION]
 KERAS_F_STR = "{val_categorical_accuracy:.5f}_{epoch:02d}"
@@ -215,6 +215,14 @@ def create_model():
     headless_model.trainable = False
 
     # rebuild top
+    x = GlobalAveragePooling2D(name="avg_pool")(headless_model.output)
+    x = BatchNormalization()(x)
+
+    top_dropout_rate = 0.2
+    x = Dropout(top_dropout_rate, name="top_dropout")(x)
+
+    # skip swish and additional dense layers for now
+    """
     x = headless_model.output
     x = GlobalAveragePooling2D(name="avg_pool")(x)
     x = BatchNormalization()(x)
@@ -228,6 +236,7 @@ def create_model():
     x = Dense(128)(x)
     x = BatchNormalization()(x)
     x = Activation(swish_act)(x)
+    """
 
     # when using mixed precision, we need to separate the output layer and the activation, since
     # softmax on fp16 is not numerically stable, while Dense fp16 IS:
