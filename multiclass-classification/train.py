@@ -139,12 +139,12 @@ plt.ioff()
 now = arrow.utcnow().format('YYMMDD_HHmm')
 
 # chooses the model size; larger is better, but requires a lot more memory and compute
-ENET_MODEL_VERSION = 3
+ENET_MODEL_VERSION = 4
 NUM_CLASSES = 3
 N_LAYERS_UNFREEZE = 0
 BATCH_SIZE = 64
-LEARNING_RATE = BATCH_SIZE / 16_000 / 100  # using LR as in the paper causes loss to go to infinity; div by 100
-EPOCHS_INITIAL = 1
+LEARNING_RATE = BATCH_SIZE / 16_000 / 200  # using LR as in the paper causes loss to go to infinity; div by 200
+EPOCHS_INITIAL = 5
 EPOCHS_TRANSFER = 100
 
 IMG_SIZE = ENET_IMG_SIZES[ENET_MODEL_VERSION]
