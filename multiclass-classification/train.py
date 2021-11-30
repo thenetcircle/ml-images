@@ -214,12 +214,16 @@ def create_model():
     # freeze the conv layers first so we can train our new top model first
     headless_model.trainable = False
 
-    # rebuild top
-    x = GlobalAveragePooling2D(name="avg_pool")(headless_model.output)
-    x = BatchNormalization()(x)
+    x = model.output
 
-    top_dropout_rate = 0.2
-    x = Dropout(top_dropout_rate, name="top_dropout")(x)
+    # rebuild top
+    # x = GlobalAveragePooling2D(name="avg_pool")(x)
+    # x = BatchNormalization()(x)
+
+    # top_dropout_rate = 0.2
+    # x = Dropout(top_dropout_rate, name="top_dropout")(x)
+
+    x = Dense(512, activation='relu')(x)
 
     # skip swish and additional dense layers for now
     """
