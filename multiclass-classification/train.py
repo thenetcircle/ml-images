@@ -214,7 +214,7 @@ def create_model():
     # freeze the conv layers first so we can train our new top model first
     headless_model.trainable = False
 
-    x = model.output
+    x = headless_model.output
 
     # rebuild top
     # x = GlobalAveragePooling2D(name="avg_pool")(x)
