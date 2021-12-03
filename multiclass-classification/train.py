@@ -143,7 +143,7 @@ ENET_MODEL_VERSION = 4
 NUM_CLASSES = 3
 N_LAYERS_UNFREEZE = 100
 BATCH_SIZE = 64
-LEARNING_RATE = BATCH_SIZE / 16_000 / 200  # using LR as in the paper causes loss to go to infinity; div by 200
+LEARNING_RATE = 1e-4  # BATCH_SIZE / 16_000 / 200  # using LR as in the paper causes loss to go to infinity; div by 200
 EPOCHS_INITIAL = 5
 EPOCHS_TRANSFER = 100
 
@@ -169,6 +169,7 @@ img_augmentation = Sequential(
     [
         preprocessing.RandomFlip(),
         preprocessing.RandomContrast(factor=0.1),
+        preprocessing.Rescaling(scale=1./255)
     ],
     name="img_augmentation",
 )
@@ -208,7 +209,8 @@ def create_model():
     headless_model = EfficientNetBx(
         include_top=False,
         input_tensor=input_tensor,
-        weights=f"data/noisy-student-efficientnet-b{ENET_MODEL_VERSION}-notop.h5"
+        weights=f"data/noisy-student-efficientnet-b{ENET_MODEL_VERSION}-notop.h5",
+        drop_connect_rate=0.3  # default for B4 is 0.2
     )
 
     # freeze the conv layers first so we can train our new top model first
@@ -218,10 +220,18 @@ def create_model():
 
     # rebuild top
     x = GlobalAveragePooling2D(name="avg_pool")(x)
+    x = BatchNormalization()(x)
+
+    top_dropout_rate = 0.2
+    x = Dropout(top_dropout_rate, name="top_dropout")(x)
+
+    """
+    x = GlobalAveragePooling2D(name="avg_pool")(x)
     # x = BatchNormalization()(x)
     # top_dropout_rate = 0.2
     # x = Dropout(top_dropout_rate, name="top_dropout")(x)
     x = Dense(512, activation='relu')(x)
+    """
 
     # skip swish and additional dense layers for now
     """
