@@ -139,13 +139,14 @@ plt.ioff()
 now = arrow.utcnow().format('YYMMDD_HHmm')
 
 # chooses the model size; larger is better, but requires a lot more memory and compute
-ENET_MODEL_VERSION = 4
+ENET_MODEL_VERSION = 3
 NUM_CLASSES = 3
-N_LAYERS_UNFREEZE = 100
+N_LAYERS_UNFREEZE = 20
 BATCH_SIZE = 64
-LEARNING_RATE = 1e-4  # BATCH_SIZE / 16_000 / 200  # using LR as in the paper causes loss to go to infinity; div by 200
-EPOCHS_INITIAL = 5
-EPOCHS_TRANSFER = 100
+LEARNING_RATE_INITIAL = 1e-2
+LEARNING_RATE_TRANSFER = BATCH_SIZE / 16_000  # LR as in paper can causes loss -> infinity; maybe div by 200
+EPOCHS_INITIAL = 50
+EPOCHS_TRANSFER = 150
 
 IMG_SIZE = ENET_IMG_SIZES[ENET_MODEL_VERSION]
 KERAS_F_STR = "{val_categorical_accuracy:.5f}_{epoch:02d}"
@@ -169,7 +170,9 @@ img_augmentation = Sequential(
     [
         preprocessing.RandomFlip(),
         preprocessing.RandomContrast(factor=0.1),
-        preprocessing.Rescaling(scale=1./255)
+        preprocessing.Rescaling(scale=1./255),
+        preprocessing.RandomRotation(factor=0.15),
+        preprocessing.RandomTranslation(height_factor=0.1, width_factor=0.1),
     ],
     name="img_augmentation",
 )
@@ -182,6 +185,13 @@ checkpoint = ModelCheckpoint(
     save_weights_only=False,
     mode='auto',
     period=1
+)
+early_initial = EarlyStopping(
+    monitor='val_categorical_accuracy',
+    min_delta=0,
+    patience=15,
+    verbose=1,
+    mode='auto'
 )
 early = EarlyStopping(
     monitor='val_categorical_accuracy',
@@ -210,15 +220,14 @@ def create_model():
         include_top=False,
         input_tensor=input_tensor,
         weights=f"data/noisy-student-efficientnet-b{ENET_MODEL_VERSION}-notop.h5",
-        drop_connect_rate=0.3  # default for B4 is 0.2
+        # drop_connect_rate=0.3  # default for B4 is 0.2
     )
 
     # freeze the conv layers first so we can train our new top model first
     headless_model.trainable = False
 
-    x = headless_model.output
-
     # rebuild top
+    x = headless_model.output
     x = GlobalAveragePooling2D(name="avg_pool")(x)
     x = BatchNormalization()(x)
 
@@ -267,7 +276,7 @@ def create_model():
     # compile the model
     model_final = tf.keras.Model(inputs, outputs, name="EfficientNet")
     model_final.compile(
-        optimizer=optimizers.Adam(learning_rate=LEARNING_RATE),
+        optimizer=optimizers.Adam(learning_rate=LEARNING_RATE_INITIAL),
         loss="categorical_crossentropy",
         metrics=[metrics.mae, metrics.categorical_accuracy]
     )
@@ -308,7 +317,7 @@ def unfreeze_model(m, n_layers=20):
 
     # have to re-compile after changing layers; also, use a smaller learning rate to not mess up the weights
     m.compile(
-        optimizer=optimizers.Adam(learning_rate=LEARNING_RATE),
+        optimizer=optimizers.Adam(learning_rate=LEARNING_RATE_TRANSFER),
         loss="categorical_crossentropy",
         metrics=[metrics.mae, metrics.categorical_accuracy]
     )
@@ -327,7 +336,7 @@ if __name__ == "__main__":
         epochs=EPOCHS_INITIAL,
         validation_data=ds_test,
         verbose=1,
-        callbacks=[reduce_lr, early]
+        callbacks=[reduce_lr, early_initial]
     )
     logger.info(f"possible hist_initial keys: {hist_initial.history.keys()}")
 
