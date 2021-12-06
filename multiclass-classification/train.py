@@ -170,7 +170,6 @@ img_augmentation = Sequential(
     [
         preprocessing.RandomFlip(),
         preprocessing.RandomContrast(factor=0.1),
-        preprocessing.RandomTranslation(height_factor=0.1, width_factor=0.1),
         preprocessing.Rescaling(scale=1./255),
     ],
     name="img_augmentation",
