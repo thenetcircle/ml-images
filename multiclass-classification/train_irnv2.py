@@ -138,7 +138,6 @@ img_augmentation = Sequential(
     [
         preprocessing.RandomFlip(),
         preprocessing.RandomContrast(factor=0.1),
-        preprocessing.Rescaling(scale=1./255),
     ],
     name="img_augmentation",
 )
@@ -173,6 +172,7 @@ logging = TensorBoard(
 def create_model():
     inputs = Input(shape=(IMG_SIZE, IMG_SIZE, 3))
     input_tensor = img_augmentation(inputs)
+    input_tensor = tf.keras.applications.inception_resnet_v2.preprocess_input(input_tensor)
 
     headless_model = InceptionResNetV2(weights='imagenet', include_top=False, pooling='avg', input_tensor=input_tensor)
 
