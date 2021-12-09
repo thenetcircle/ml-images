@@ -117,7 +117,7 @@ N_LAYERS_UNFREEZE = 0
 BATCH_SIZE = 64
 LEARNING_RATE_INITIAL = 1e-2
 LEARNING_RATE_TRANSFER = 1e-4
-EPOCHS_INITIAL = 50
+EPOCHS_INITIAL = 25
 EPOCHS_TRANSFER = 150
 
 KERAS_F_STR = "{val_categorical_accuracy:.5f}_{epoch:02d}"
@@ -154,14 +154,14 @@ checkpoint = ModelCheckpoint(
 early = EarlyStopping(
     monitor='val_categorical_accuracy',
     min_delta=0,
-    patience=1500,
+    patience=50,
     verbose=1,
     mode='auto'
 )
 reduce_lr = ReduceLROnPlateau(
     monitor='val_categorical_accuracy',
     factor=0.5,
-    patience=50,
+    patience=25,
     verbose=1
 )
 logging = TensorBoard(
