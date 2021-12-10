@@ -55,7 +55,6 @@ def process_image(input_tuple):
 
         img_clahe = cv2.cvtColor(img_clahe, cv2.COLOR_Lab2RGB)
         cv2.imwrite(_output_path, img_clahe)
-        sys.exit(1)
     except Exception as e1:
         print(f"error: could not process file '{file_path}' because: {str(e1)}")
 
@@ -84,8 +83,5 @@ if __name__ == "__main__":
 
                 files.append((file_path, output_path))
 
-    print(len(files))
-
     with Pool(processes=int(float(args.workers))) as pool:
-        results = tqdm(pool.imap(process_image, files), total=len(files))
-        tuple(results)  # fetch the lazy results
+        list(tqdm(pool.imap_unordered(process_image, files), total=len(files)))
