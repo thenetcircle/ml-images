@@ -203,7 +203,7 @@ def create_model():
 def unfreeze_model(m):
     # model needs to be set to trainable as well
     m.trainable = True
-    freeze = True
+    freeze = N_LAYERS_UNFREEZE > 0
     n_frozen = 0
 
     for layer in m.layers:
