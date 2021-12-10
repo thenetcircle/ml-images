@@ -217,7 +217,7 @@ def unfreeze_model(m):
         if layer.name == 'block8_1_mixed':  # mixed4/6 for InceptionV3
             freeze = False
 
-    print(f'froze the first {n_frozen} out of {len(m.layers)} layers')
+    print(f'froze {n_frozen} layers out of {len(m.layers)}')
 
     # have to re-compile after changing layers; also, use a smaller learning rate to not mess up the weights
     m.compile(
