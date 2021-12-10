@@ -208,11 +208,14 @@ def unfreeze_model(m):
     freeze = True
     n_frozen = 0
     for layer in m.layers:
-        layer.trainable = freeze and not isinstance(layer, BatchNormalization)
-        if freeze:
+        should_freeze = freeze and not isinstance(layer, BatchNormalization)
+        layer.trainable = should_freeze
+
+        if should_freeze:
             n_frozen += 1
 
-        if layer.name == 'block8_10_mixed':  # mixed4/6 for InceptionV3
+        # block8_1_mixed is layer 633 out of 783
+        if layer.name == 'block8_1_mixed':  # mixed4/6 for InceptionV3
             freeze = False
 
     print(f'froze the first {n_frozen} out of {len(m.layers)} layers')
@@ -233,17 +236,25 @@ if __name__ == "__main__":
     ds_train = create_dataset(train_dir)
     ds_test = create_dataset(valid_dir)
 
-    hist_initial = model.fit(
-        ds_train,
-        epochs=EPOCHS_INITIAL,
-        validation_data=ds_test,
-        verbose=1,
-        callbacks=[reduce_lr, early]
-    )
-    logger.info(f"possible hist_initial keys: {hist_initial.history.keys()}")
+    weights = None
+    if len(sys.argv) > 2:
+        weights = sys.argv[2]
 
-    model.save_weights(f"{output_dir}/model_irnv2_init_{now}.h5")
-    plot_hist("initial", hist_initial)
+    if weights is None:
+        hist_initial = model.fit(
+            ds_train,
+            epochs=EPOCHS_INITIAL,
+            validation_data=ds_test,
+            verbose=1,
+            callbacks=[reduce_lr, early]
+        )
+        logger.info(f"possible hist_initial keys: {hist_initial.history.keys()}")
+        model.save_weights(f"{output_dir}/model_irnv2_init_{now}.h5")
+        plot_hist("initial", hist_initial)
+
+    else:
+        logger.info(f"loading saved weights: {weights}")
+        model.load_weights(weights)
 
     # train a few more layers
     with strategy.scope():
@@ -256,7 +267,7 @@ if __name__ == "__main__":
         verbose=1,
         callbacks=[logging, checkpoint, reduce_lr, early]
     )
-    logger.info(f"possible hist_transfer keys: {hist_initial.history.keys()}")
+    logger.info(f"possible hist_transfer keys: {hist_transfer.history.keys()}")
 
     model.save_weights(f"{output_dir}/model_irnv2_tl_{now}.h5")
-    plot_hist("transfer", hist_initial)
+    plot_hist("transfer", hist_transfer)
