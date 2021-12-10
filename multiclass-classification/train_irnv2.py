@@ -203,13 +203,12 @@ def create_model():
 def unfreeze_model(m):
     # model needs to be set to trainable as well
     m.trainable = True
-
-    # unfreeze all layers after "mixed4" (total of 10 mixed layers, so around 60% is trainable now)
     freeze = True
     n_frozen = 0
+
     for layer in m.layers:
-        should_freeze = freeze and not isinstance(layer, BatchNormalization)
-        layer.trainable = should_freeze
+        should_freeze = freeze or isinstance(layer, BatchNormalization)
+        layer.trainable = not should_freeze
 
         if should_freeze:
             n_frozen += 1
