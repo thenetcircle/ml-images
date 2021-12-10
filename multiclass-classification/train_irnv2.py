@@ -248,12 +248,12 @@ if __name__ == "__main__":
             verbose=1,
             callbacks=[reduce_lr, early]
         )
-        logger.info(f"possible hist_initial keys: {hist_initial.history.keys()}")
+        print(f"possible hist_initial keys: {hist_initial.history.keys()}")
         model.save_weights(f"{output_dir}/model_irnv2_init_{now}.h5")
         plot_hist("initial", hist_initial)
 
     else:
-        logger.info(f"loading saved weights: {weights}")
+        print(f"loading saved weights: {weights}")
         model.load_weights(weights)
 
     # train a few more layers
@@ -267,7 +267,7 @@ if __name__ == "__main__":
         verbose=1,
         callbacks=[logging, checkpoint, reduce_lr, early]
     )
-    logger.info(f"possible hist_transfer keys: {hist_transfer.history.keys()}")
+    print(f"possible hist_transfer keys: {hist_transfer.history.keys()}")
 
     model.save_weights(f"{output_dir}/model_irnv2_tl_{now}.h5")
     plot_hist("transfer", hist_transfer)
