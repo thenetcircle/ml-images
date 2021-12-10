@@ -237,8 +237,8 @@ if __name__ == "__main__":
     ds_test = create_dataset(valid_dir)
 
     weights = None
-    if len(sys.argv) > 2:
-        weights = sys.argv[2]
+    if len(sys.argv) > 3:
+        weights = sys.argv[3]
 
     if weights is None:
         hist_initial = model.fit(
