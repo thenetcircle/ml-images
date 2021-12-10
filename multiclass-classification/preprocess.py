@@ -1,12 +1,12 @@
-import os
-import sys
-import time
-from glob import glob
 import argparse
+import os
 import pathlib
+import sys
+from glob import glob
+from multiprocessing import Pool
+
 import cv2
 from tqdm import tqdm
-from multiprocessing import Pool
 
 
 def parse_arguments():
@@ -82,9 +82,10 @@ if __name__ == "__main__":
     else:
         stage_dirs = glob(f"{args.input}/*")
 
+    # create a list of files to process and their corresponding output path
     for train_or_test in stage_dirs:
-        for category_dir in glob(f"{train_or_test}/*"):
-            output_dir = f"{args.output}/{category_dir.split('/', maxsplit=1)[1]}"
+        for label_dir in glob(f"{train_or_test}/*"):
+            output_dir = f"{args.output}/{label_dir.split('/', maxsplit=1)[1]}"
 
             if not os.path.exists(output_dir):
                 try:
@@ -93,7 +94,7 @@ if __name__ == "__main__":
                     print(f"error: could not create output dir '{output_dir}': {str(e)}")
                     sys.exit(1)
 
-            for file_path in glob(f"{category_dir}/*.jpg"):
+            for file_path in glob(f"{label_dir}/*.jpg"):
                 output_path = f"{args.output}/{file_path.split('/', maxsplit=1)[1]}"
 
                 if os.path.exists(output_path) and not args.replace:
@@ -101,5 +102,6 @@ if __name__ == "__main__":
 
                 files.append((file_path, output_path))
 
+    # process in parallel and save to disk
     with Pool(processes=int(float(args.workers))) as pool:
         list(tqdm(pool.imap_unordered(process_image, files), total=len(files)))
