@@ -15,6 +15,11 @@ def parse_arguments():
     parser.add_argument("-i", "--input", help="Input directory", required=True)
     parser.add_argument("-r", "--replace", help="Replace output files", default=False)
     parser.add_argument("-w", "--workers", help="Number of workers", default=os.cpu_count())
+    parser.add_argument(
+        "-s", "--stage",
+        help="Stage, e.g. 'train,test', else all subdirs will be traversed",
+        default=None
+    )
 
     _args = parser.parse_args()
 
@@ -31,6 +36,14 @@ def parse_arguments():
     if not os.path.exists(_args.input):
         print(f"error: input dir doesn't exist: {_args.input}")
         sys.exit(1)
+
+    if _args.stage is not None:
+        stages = _args.stage.split(",")
+        for stage in stages:
+            stage_dir = f"{_args.input}/{stage}"
+            if not os.path.exists(stage_dir):
+                print(f"error: stage dir '{stage_dir}' does not exist")
+                sys.exit(1)
 
     if not os.path.exists(_args.output):
         try:
@@ -64,7 +77,12 @@ if __name__ == "__main__":
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(16, 16))
     files = list()
 
-    for train_or_test in glob(f"{args.input}/*"):
+    if args.stage is not None:
+        stage_dirs = [f"{args.input}/{stage}" for stage in args.stage.split(",")]
+    else:
+        stage_dirs = glob(f"{args.input}/*")
+
+    for train_or_test in stage_dirs:
         for category_dir in glob(f"{train_or_test}/*"):
             output_dir = f"{args.output}/{category_dir.split('/', maxsplit=1)[1]}"
 
