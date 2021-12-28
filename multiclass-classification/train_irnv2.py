@@ -15,6 +15,7 @@ from loguru import logger
 from tensorflow.keras.layers.experimental import preprocessing
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Dropout
 from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.layers import Input
 from tensorflow.keras import optimizers
@@ -186,6 +187,7 @@ def create_model():
     # put our own top model to classify our custom classes
     x = headless_model.output
     x = Dense(256, activation="relu")(x)
+    x = Dropout(0.2)(x)
     predictions = Dense(NUM_CLASSES, activation="softmax", name="pred")(x)
 
     model_final = tf.keras.Model(inputs=headless_model.input, outputs=predictions)
@@ -217,7 +219,7 @@ def unfreeze_model(m):
         if layer.name == 'block8_1_mixed':  # mixed4/6 for InceptionV3
             freeze = False
 
-    print(f'froze {n_frozen} layers out of {len(m.layers)}')
+    logger.info(f'froze {n_frozen} layers out of {len(m.layers)}')
 
     # have to re-compile after changing layers; also, use a smaller learning rate to not mess up the weights
     m.compile(
@@ -247,12 +249,12 @@ if __name__ == "__main__":
             verbose=1,
             callbacks=[reduce_lr, early]
         )
-        print(f"possible hist_initial keys: {hist_initial.history.keys()}")
+        logger.info(f"possible hist_initial keys: {hist_initial.history.keys()}")
         model.save_weights(f"{output_dir}/model_irnv2_init_{now}.h5")
         plot_hist("initial", hist_initial)
 
     else:
-        print(f"loading saved weights: {weights}")
+        logger.info(f"loading saved weights: {weights}")
         model.load_weights(weights)
 
     # train a few more layers
@@ -266,7 +268,7 @@ if __name__ == "__main__":
         verbose=1,
         callbacks=[logging, checkpoint, reduce_lr, early]
     )
-    print(f"possible hist_transfer keys: {hist_transfer.history.keys()}")
+    logger.info(f"possible hist_transfer keys: {hist_transfer.history.keys()}")
 
     model.save_weights(f"{output_dir}/model_irnv2_tl_{now}.h5")
     plot_hist("transfer", hist_transfer)
