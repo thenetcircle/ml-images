@@ -65,8 +65,12 @@ def create_strategy():
     return tf.distribute.MirroredStrategy()
 
 
+def preprocess(images, labels)
+    return tf.keras.applications.inception_resnet_v2.preprocess_input(images), labels
+
+
 def create_dataset(directory):
-    return tf.keras.preprocessing.image_dataset_from_directory(
+    ds = tf.keras.preprocessing.image_dataset_from_directory(
         directory,
         labels="inferred",
         label_mode="categorical",
@@ -78,6 +82,7 @@ def create_dataset(directory):
         follow_links=False,
         smart_resize=False
     )
+    return ds.map(preprocess)
 
 
 def plot_hist(prefix, hist):
@@ -110,7 +115,7 @@ now = arrow.utcnow().format('YYMMDD_HHmm')
 NUM_CLASSES = 3
 IMG_SIZE = 299
 N_LAYERS_UNFREEZE = 0
-BATCH_SIZE = 16
+BATCH_SIZE = 64 * 4
 LEARNING_RATE_INITIAL = 1e-2
 LEARNING_RATE_TRANSFER = 1e-3
 EPOCHS_INITIAL = 10
@@ -167,7 +172,7 @@ logging = TensorBoard(
 
 def create_model():
     inputs = Input(shape=(IMG_SIZE, IMG_SIZE, 3))
-    inputs = tf.keras.applications.inception_resnet_v2.preprocess_input(inputs)
+    # inputs = tf.keras.applications.inception_resnet_v2.preprocess_input(inputs)
     input_tensor = img_augmentation(inputs)
 
     headless_model = InceptionResNetV2(weights='imagenet', include_top=False, pooling='avg', input_tensor=input_tensor)
