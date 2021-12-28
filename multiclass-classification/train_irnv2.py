@@ -65,7 +65,7 @@ def create_strategy():
     return tf.distribute.MirroredStrategy()
 
 
-def preprocess(images, labels)
+def preprocess(images, labels):
     return tf.keras.applications.inception_resnet_v2.preprocess_input(images), labels
 
 
