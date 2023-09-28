@@ -10,7 +10,7 @@ import sys
 import json
 
 from loguru import logger
-from tensorflow.keras.applications.efficientnet import *
+from tensorflow.keras.applications.efficientnet_v2 import *
 from tensorflow.keras.layers.experimental import preprocessing
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Activation
@@ -112,24 +112,22 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 # resolutions for EfficientNet; larger images requires more gpu memory / smaller batch size
 ENET_IMG_SIZES = {
-    0: 224,
-    1: 240,
-    2: 260,
-    3: 300,
-    4: 380,
-    5: 456,
-    6: 528,
-    7: 600
+    'B0': 224,
+    'B1': 240,
+    'B2': 260,
+    'B3': 300,
+    'S': 384,
+    'M': 480,
+    'L': 480
 }
 ENET_MODEL_CLASSES = {
-    0: EfficientNetB0,
-    1: EfficientNetB1,
-    2: EfficientNetB2,
-    3: EfficientNetB3,
-    4: EfficientNetB4,
-    5: EfficientNetB5,
-    6: EfficientNetB6,
-    7: EfficientNetB7
+    'B0': EfficientNetV2B0,
+    'B1': EfficientNetV2B1,
+    'B2': EfficientNetV2B2,
+    'B3': EfficientNetV2B3,
+    'S': EfficientNetV2S,
+    'M': EfficientNetV2M,
+    'L': EfficientNetV2L
 }
 
 # turn of interactive plotting mode, we'll only be saving the images to disk
@@ -139,12 +137,12 @@ plt.ioff()
 now = arrow.utcnow().format('YYMMDD_HHmm')
 
 # chooses the model size; larger is better, but requires a lot more memory and compute
-ENET_MODEL_VERSION = 3
+ENET_MODEL_VERSION = 'B3'
 NUM_CLASSES = 3
 N_LAYERS_UNFREEZE = 20
-BATCH_SIZE = 64
+BATCH_SIZE = 12
 LEARNING_RATE_INITIAL = 1e-2
-LEARNING_RATE_TRANSFER = BATCH_SIZE / 16_000  # LR as in paper can causes loss -> infinity; maybe div by 200
+LEARNING_RATE_TRANSFER = BATCH_SIZE / 16_000  # LR as in paper causes loss -> infinity; maybe div by 200
 EPOCHS_INITIAL = 50
 EPOCHS_TRANSFER = 150
 
@@ -157,7 +155,7 @@ EfficientNetBx = ENET_MODEL_CLASSES[ENET_MODEL_VERSION]
 input_dir = sys.argv[1]
 output_dir = sys.argv[2]
 log_dir = f"{output_dir}/logs/{now}/"
-checkpoint_path = f"{output_dir}/model_ckpt_efficientnet_b{ENET_MODEL_VERSION}_{KERAS_F_STR}_{now}.h5"
+checkpoint_path = f"{output_dir}/model_ckpt_effnet_v2_{ENET_MODEL_VERSION}_{KERAS_F_STR}_{now}.h5"
 train_dir = f"{input_dir}/train"
 valid_dir = f"{input_dir}/valid"
 
@@ -217,11 +215,12 @@ def create_model():
     headless_model = EfficientNetBx(
         include_top=False,
         input_tensor=input_tensor,
-        weights=f"data/noisy-student-efficientnet-b{ENET_MODEL_VERSION}-notop.h5",
+        weights="imagenet",
+        # weights=f"data/noisy-student-efficientnet-b{ENET_MODEL_VERSION}-notop.h5",
         # drop_connect_rate=0.3  # default for B4 is 0.2
     )
 
-    # freeze the conv layers first so we can train our new top model first
+    # freeze the conv layers so we can train our new top model first
     headless_model.trainable = False
 
     # rebuild top
@@ -266,13 +265,13 @@ def create_model():
     #
     # more info: https://www.tensorflow.org/guide/mixed_precision
     # TODO: issues with fp16 on efficientnet and tf 2.5
-    # x = Dense(NUM_CLASSES, name="dense_logits")(x)
-    # outputs = Activation('softmax', dtype='float32', name='predictions')(x)
+    x = Dense(NUM_CLASSES, name="dense_logits")(x)
+    outputs = Activation('softmax', dtype='float32', name='predictions')(x)
 
-    outputs = Dense(NUM_CLASSES, activation="softmax", name="pred")(x)
+    # outputs = Dense(NUM_CLASSES, activation="softmax", name="pred")(x)
 
     # compile the model
-    model_final = tf.keras.Model(inputs, outputs, name="EfficientNet")
+    model_final = tf.keras.Model(inputs, outputs, name="EfficientNetV2")
     model_final.compile(
         optimizer=optimizers.Adam(learning_rate=LEARNING_RATE_INITIAL),
         loss="categorical_crossentropy",
@@ -338,7 +337,7 @@ if __name__ == "__main__":
     )
     logger.info(f"possible hist_initial keys: {hist_initial.history.keys()}")
 
-    model.save_weights(f"{output_dir}/model_efficientnet_b{ENET_MODEL_VERSION}_init_{now}.h5")
+    model.save_weights(f"{output_dir}/model_effnet_v2_{ENET_MODEL_VERSION}_init_{now}.h5")
     plot_hist("initial", hist_initial)
 
     # train a few more layers
@@ -354,5 +353,5 @@ if __name__ == "__main__":
     )
     logger.info(f"possible hist_transfer keys: {hist_initial.history.keys()}")
 
-    model.save_weights(f"{output_dir}/model_efficientnet_b{ENET_MODEL_VERSION}_tl_{now}.h5")
+    model.save_weights(f"{output_dir}/model_effnet_v2_{ENET_MODEL_VERSION}_tl_{now}.h5")
     plot_hist("transfer", hist_initial)
