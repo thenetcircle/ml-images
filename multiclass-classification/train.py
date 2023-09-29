@@ -140,10 +140,10 @@ now = arrow.utcnow().format('YYMMDD_HHmm')
 ENET_MODEL_VERSION = 'B3'
 NUM_CLASSES = 3
 N_LAYERS_UNFREEZE = 20
-BATCH_SIZE = 64
+BATCH_SIZE = 128
 LEARNING_RATE_INITIAL = 1e-2
 LEARNING_RATE_TRANSFER = BATCH_SIZE / 16_000  # LR as in paper causes loss -> infinity; maybe div by 200
-EPOCHS_INITIAL = 10
+EPOCHS_INITIAL = 3
 EPOCHS_TRANSFER = 150
 
 IMG_SIZE = ENET_IMG_SIZES[ENET_MODEL_VERSION]
@@ -265,10 +265,10 @@ def create_model():
     #
     # more info: https://www.tensorflow.org/guide/mixed_precision
     # TODO: issues with fp16 on efficientnet and tf 2.5
-    x = Dense(NUM_CLASSES, name="dense_logits")(x)
-    outputs = Activation('softmax', dtype='float32', name='predictions')(x)
+    # x = Dense(NUM_CLASSES, name="dense_logits")(x)
+    # outputs = Activation('softmax', dtype='float32', name='predictions')(x)
 
-    # outputs = Dense(NUM_CLASSES, activation="softmax", name="pred")(x)
+    outputs = Dense(NUM_CLASSES, activation="softmax", name="pred")(x)
 
     # compile the model
     model_final = tf.keras.Model(inputs, outputs, name="EfficientNetV2")
