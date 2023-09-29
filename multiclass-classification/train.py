@@ -139,7 +139,7 @@ now = arrow.utcnow().format('YYMMDD_HHmm')
 # chooses the model size; larger is better, but requires a lot more memory and compute
 ENET_MODEL_VERSION = 'S'
 NUM_CLASSES = 3
-N_LAYERS_UNFREEZE = 20
+N_LAYERS_UNFREEZE = 30
 BATCH_SIZE = 256
 LEARNING_RATE_INITIAL = 1e-2
 LEARNING_RATE_TRANSFER = BATCH_SIZE / 16_000  # LR as in paper causes loss -> infinity; maybe div by 200
