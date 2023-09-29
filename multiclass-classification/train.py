@@ -137,7 +137,7 @@ plt.ioff()
 now = arrow.utcnow().format('YYMMDD_HHmm')
 
 # chooses the model size; larger is better, but requires a lot more memory and compute
-ENET_MODEL_VERSION = 'B3'
+ENET_MODEL_VERSION = 'S'
 NUM_CLASSES = 3
 N_LAYERS_UNFREEZE = 20
 BATCH_SIZE = 256
@@ -199,7 +199,7 @@ early = EarlyStopping(
 reduce_lr = ReduceLROnPlateau(
     monitor='val_categorical_accuracy',
     factor=0.5,
-    patience=50,
+    patience=10,
     verbose=1
 )
 logging = TensorBoard(
