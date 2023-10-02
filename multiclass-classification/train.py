@@ -105,7 +105,7 @@ strategy = create_strategy()
 # TODO: issues with mixed precision on tf 2.5 and efficientnet
 # use both float32 and float16; float16 will be faster on the gpu, but some layers needs the
 # numerical stability provided by float32
-# mixed_precision.set_global_policy('mixed_float16')
+mixed_precision.set_global_policy('mixed_float16')
 
 # suppress image loading warnings, messes up the output
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
@@ -141,10 +141,10 @@ now = arrow.utcnow().format('YYMMDD_HHmm')
 ENET_MODEL_VERSION = 'S'
 NUM_CLASSES = 3
 N_LAYERS_UNFREEZE = 30
-BATCH_SIZE = 256
-LEARNING_RATE_INITIAL = 1e-1
-LEARNING_RATE_TRANSFER = BATCH_SIZE / 16_000  # LR as in paper causes loss -> infinity; maybe div by 200
-EPOCHS_INITIAL = 3
+BATCH_SIZE = 512
+LEARNING_RATE_INITIAL = 1e-2
+LEARNING_RATE_TRANSFER = BATCH_SIZE / 64_000  # LR as in paper causes loss -> infinity; maybe div by 200
+EPOCHS_INITIAL = 5
 EPOCHS_TRANSFER = 150
 
 IMG_SIZE = ENET_IMG_SIZES[ENET_MODEL_VERSION]
@@ -266,10 +266,10 @@ def create_model():
     #
     # more info: https://www.tensorflow.org/guide/mixed_precision
     # TODO: issues with fp16 on efficientnet and tf 2.5
-    # x = Dense(NUM_CLASSES, name="dense_logits")(x)
-    # outputs = Activation('softmax', dtype='float32', name='predictions')(x)
+    x = Dense(NUM_CLASSES, name="dense_logits")(x)
+    outputs = Activation('softmax', dtype='float32', name='predictions')(x)
 
-    outputs = Dense(NUM_CLASSES, activation="softmax", name="pred")(x)
+    # outputs = Dense(NUM_CLASSES, activation="softmax", name="pred")(x)
 
     # compile the model
     model_final = tf.keras.Model(inputs, outputs, name="EfficientNetV2")
