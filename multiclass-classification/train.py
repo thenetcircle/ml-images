@@ -1,4 +1,6 @@
 from PIL import ImageFile
+from tensorflow.keras.src.layers.preprocessing.image_preprocessing import HORIZONTAL
+
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 import warnings
@@ -166,9 +168,9 @@ check_dir(log_dir)
 
 img_augmentation = Sequential(
     [
-        preprocessing.RandomFlip(),
-        preprocessing.RandomContrast(factor=0.1),
-        preprocessing.Rescaling(scale=1./255),
+        preprocessing.RandomFlip(mode=HORIZONTAL),
+        # preprocessing.RandomContrast(factor=0.1),
+        # preprocessing.Rescaling(scale=1./255),
     ],
     name="img_augmentation",
 )
