@@ -102,10 +102,10 @@ strategy = create_strategy()
 # register our custom activation
 # get_custom_objects().update({'swish_act': SwishActivation(swish_act)})
 
-# TODO: issues with mixed precision on tf 2.5 and efficientnet
+# TODO: issues with mixed precision on tf 2.5 and efficientnet, also on tf 2.14 and effnetv2 (nan loss)
 # use both float32 and float16; float16 will be faster on the gpu, but some layers needs the
 # numerical stability provided by float32
-mixed_precision.set_global_policy('mixed_float16')
+# mixed_precision.set_global_policy('mixed_float16')
 
 # suppress image loading warnings, messes up the output
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
@@ -143,7 +143,7 @@ NUM_CLASSES = 3
 N_LAYERS_UNFREEZE = 30
 BATCH_SIZE = 512
 LEARNING_RATE_INITIAL = 1e-2
-LEARNING_RATE_TRANSFER = BATCH_SIZE / 64_000  # LR as in paper causes loss -> infinity; maybe div by 200
+LEARNING_RATE_TRANSFER = BATCH_SIZE / 32_000  # LR as in paper causes loss -> infinity; maybe div by 200
 EPOCHS_INITIAL = 5
 EPOCHS_TRANSFER = 150
 
@@ -231,6 +231,7 @@ def create_model():
 
     top_dropout_rate = 0.2
     x = Dropout(top_dropout_rate, name="top_dropout")(x)
+    x = Dense(256, activation='relu')(x)
 
     """
     x = GlobalAveragePooling2D(name="avg_pool")(x)
@@ -266,10 +267,11 @@ def create_model():
     #
     # more info: https://www.tensorflow.org/guide/mixed_precision
     # TODO: issues with fp16 on efficientnet and tf 2.5
-    x = Dense(NUM_CLASSES, name="dense_logits")(x)
-    outputs = Activation('softmax', dtype='float32', name='predictions')(x)
+    #   also issues with effnetv2 and tf 2.14, loss becomes nan
+    # x = Dense(NUM_CLASSES, name="dense_logits")(x)
+    # outputs = Activation('softmax', dtype='float32', name='predictions')(x)
 
-    # outputs = Dense(NUM_CLASSES, activation="softmax", name="pred")(x)
+    outputs = Dense(NUM_CLASSES, activation="softmax", name="pred")(x)
 
     # compile the model
     model_final = tf.keras.Model(inputs, outputs, name="EfficientNetV2")
