@@ -138,7 +138,7 @@ plt.ioff()
 now = arrow.utcnow().format('YYMMDD_HHmm')
 
 # chooses the model size; larger is better, but requires a lot more memory and compute
-ENET_MODEL_VERSION = 'S'
+ENET_MODEL_VERSION = 'M'
 NUM_CLASSES = 3
 N_LAYERS_UNFREEZE = 10
 BATCH_SIZE = 256
@@ -200,7 +200,8 @@ early = EarlyStopping(
 reduce_lr = ReduceLROnPlateau(
     monitor='val_categorical_accuracy',
     factor=0.5,
-    patience=10,
+    patience=5,
+    min_lr=1e-6, # will stop reducing at around epoch 30 if halving every 5 epochs
     verbose=1
 )
 logging = TensorBoard(
