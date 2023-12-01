@@ -1,36 +1,36 @@
 from PIL import ImageFile
-
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 import warnings
 warnings.filterwarnings('ignore')
 
-import arrow
+# from tensorflow.keras.utils import get_custom_objects
+# from tensorflow.keras import mixed_precision
+
+import json
 import os
 import sys
-import json
 
+import arrow
+import matplotlib.pyplot as plt
+import tensorflow as tf
 from loguru import logger
+from tensorflow.keras import metrics
+from tensorflow.keras import optimizers
 from tensorflow.keras.applications.efficientnet_v2 import *
-from tensorflow.keras.layers.experimental import preprocessing
-from tensorflow.keras.models import Sequential
+from tensorflow.keras.backend import sigmoid
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.callbacks import ModelCheckpoint
+from tensorflow.keras.callbacks import ReduceLROnPlateau
+from tensorflow.keras.callbacks import TensorBoard
 from tensorflow.keras.layers import Activation
-from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import BatchNormalization
+from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Dropout
 from tensorflow.keras.layers import GlobalAveragePooling2D
 from tensorflow.keras.layers import Input
-from tensorflow.keras import optimizers
-from tensorflow.keras import metrics
-from tensorflow.keras import mixed_precision
-from tensorflow.keras.backend import sigmoid
-from tensorflow.keras.callbacks import EarlyStopping
-from tensorflow.keras.callbacks import ReduceLROnPlateau
-from tensorflow.keras.callbacks import ModelCheckpoint
-from tensorflow.keras.callbacks import TensorBoard
-from tensorflow.keras.utils import get_custom_objects
-import tensorflow as tf
-import matplotlib.pyplot as plt
+from tensorflow.keras.layers.experimental import preprocessing
+from tensorflow.keras.models import Sequential
 
 
 def check_dir(directory, should_raise: bool = False):
